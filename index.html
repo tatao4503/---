@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J.A.R.V.I.S. — 태오의 대학 어시스턴트</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #06080f;
+      --bg2: #090c16;
+      --bg3: #0c1020;
+      --border: #111827;
+      --border2: #1a2540;
+      --text: #c8d4e8;
+      --text-dim: #4a6080;
+      --text-bright: #e8f0ff;
+      --accent: #3b7dd8;
+      --accent-dim: #1a3a6a;
+      --accent-glow: rgba(59,125,216,0.12);
+      --red: #e05555;
+      --amber: #d4923a;
+      --green: #3db88a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,125,216,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,125,216,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes dotBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── HEADER ── */
+    header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6,8,15,0.92);
+      backdrop-filter: blur(16px);
+      flex-shrink: 0;
+    }
+
+    .logo-ring {
+      position: relative;
+      width: 38px; height: 38px;
+      flex-shrink: 0;
+    }
+    .logo-ring svg {
+      position: absolute;
+      inset: 0;
+      animation: spin 12s linear infinite;
+    }
+    .logo-inner {
+      position: absolute;
+      inset: 6px;
+      background: linear-gradient(135deg, #1a3a6a, #0d2240);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Crimson Pro', serif;
+      font-size: 15px; font-weight: 600;
+      color: #7ab3f0;
+    }
+    .status-dot {
+      position: absolute;
+      bottom: 2px; right: 2px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    .header-title { flex: 1; }
+    .header-title h1 {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      color: #7ab3f0;
+    }
+    .header-title p {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-top: 2px;
+    }
+
+    .header-time { font-size: 11px; color: var(--text-dim); letter-spacing: 0.08em; text-align: right; }
+    .header-time .date { font-size: 9px; color: #2a3f5a; margin-top: 2px; }
+
+    .panel-toggles { display: flex; gap: 6px; }
+    .panel-toggle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      transition: all 0.2s;
+    }
+    .panel-toggle:hover, .panel-toggle.active {
+      background: var(--accent-glow);
+      border-color: var(--accent-dim);
+      color: #7ab3f0;
+    }
+
+    /* ── LAYOUT ── */
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── SIDE PANEL ── */
+    #side-panel {
+      width: 270px;
+      border-right: 1px solid var(--border);
+      background: var(--bg2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.3s ease, opacity 0.3s ease;
+      flex-shrink: 0;
+    }
+    #side-panel.hidden { width: 0; opacity: 0; overflow: hidden; }
+
+    .panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-bottom: 1px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { color: #7ab3f0; border-bottom-color: var(--accent); }
+
+    .panel-content { flex: 1; overflow-y: auto; padding: 12px; }
+
+    .task-card {
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      animation: fadeUp 0.3s ease;
+    }
+    .task-card:hover { border-color: var(--border2); background: #0e1628; }
+    .task-card.done { opacity: 0.35; }
+    .task-card.done .task-title { text-decoration: line-through; }
+
+    .task-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .task-title { font-family: 'Crimson Pro', serif; font-size: 13px; color: var(--text-bright); line-height: 1.4; }
+    .priority-badge { font-size: 8px; padding: 2px 6px; border-radius: 10px; flex-shrink: 0; letter-spacing: 0.05em; }
+    .priority-high   { background: rgba(224,85,85,0.12);  color: var(--red);   border: 1px solid rgba(224,85,85,0.25); }
+    .priority-medium { background: rgba(212,146,58,0.12); color: var(--amber); border: 1px solid rgba(212,146,58,0.25); }
+    .priority-low    { background: rgba(61,184,138,0.12); color: var(--green); border: 1px solid rgba(61,184,138,0.25); }
+    .task-meta { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim); }
+    .section-label { font-size: 8px; letter-spacing: 0.15em; color: #1e2d40; padding: 8px 4px 4px; }
+    .empty-state { font-size: 11px; color: var(--text-dim); text-align: center; padding: 20px 0; font-family: 'Crimson Pro', serif; font-style: italic; }
+
+    .schedule-card { padding: 10px 12px; margin-bottom: 6px; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); animation: fadeUp 0.3s ease; }
+    .schedule-title { font-family: 'Crimson Pro', serif; font-size: 13px; color: var(--text-bright); margin-bottom: 4px; }
+    .schedule-meta { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim); }
+    .day-divider { font-size: 8px; letter-spacing: 0.15em; color: var(--accent-dim); padding: 10px 4px 4px; border-top: 1px solid var(--border); margin-top: 4px; }
+    .day-divider:first-child { border-top: none; margin-top: 0; }
+
+    /* ── CHAT ── */
+    #chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    #messages { flex: 1; overflow-y: auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+    .msg-row { display: flex; align-items: flex-end; gap: 10px; animation: fadeUp 0.3s ease; }
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, #1a3a6a, #0d2240);
+      border: 1px solid var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Crimson Pro', serif; font-size: 11px; color: #7ab3f0;
+      flex-shrink: 0; margin-bottom: 2px;
+    }
+    .msg-bubble { max-width: 68%; padding: 12px 16px; font-size: 13px; line-height: 1.75; white-space: pre-wrap; word-break: break-word; font-family: 'Crimson Pro', serif; }
+    .msg-bubble.assistant { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px 14px 14px 3px; color: var(--text); }
+    .msg-bubble.user { background: var(--accent-glow); border: 1px solid var(--accent-dim); border-radius: 14px 14px 3px 14px; color: #a8c8f0; }
+
+    .typing-dots { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+    .typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: dotBounce 1.2s ease-in-out infinite; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    #suggestions { padding: 0 32px 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .suggestion {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      padding: 4px 12px; border-radius: 3px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-dim); cursor: pointer; letter-spacing: 0.04em; transition: all 0.2s;
+    }
+    .suggestion:hover { border-color: var(--accent-dim); color: #7ab3f0; background: var(--accent-glow); }
+
+    #input-area { padding: 12px 32px 22px; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-wrap {
+      display: flex; gap: 10px; align-items: flex-end;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap:focus-within { border-color: var(--accent-dim); box-shadow: 0 0 0 2px var(--accent-glow); }
+    #msg-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: var(--text-bright); font-family: 'Crimson Pro', serif;
+      font-size: 14px; line-height: 1.6; resize: none; max-height: 100px; overflow-y: auto;
+    }
+    #msg-input::placeholder { color: #2a3f5a; }
+    #send-btn {
+      width: 32px; height: 32px; border-radius: 6px; border: none;
+      background: var(--accent-dim); color: #7ab3f0; cursor: pointer;
+      font-size: 16px; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    #send-btn:hover:not(:disabled) { background: var(--accent); }
+    #send-btn:disabled { opacity: 0.3; cursor: default; }
+    .input-hint { font-size: 8px; color: #1a2540; text-align: center; margin-top: 8px; letter-spacing: 0.1em; }
+
+    /* ── MOBILE ── */
+    @media (max-width: 640px) {
+      header { padding: 12px 16px; gap: 10px; }
+      #side-panel { width: 100%; position: absolute; top: 0; bottom: 0; left: 0; z-index: 20; border-right: none; }
+      #side-panel.hidden { width: 0; }
+      #messages { padding: 20px 16px; }
+      #suggestions { padding: 0 16px 8px; }
+      #input-area { padding: 10px 16px 16px; }
+      .msg-bubble { max-width: 85%; }
+      .header-time { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-ring">
+    <svg viewBox="0 0 38 38" fill="none">
+      <circle cx="19" cy="19" r="17" stroke="#1a3a6a" stroke-width="1" stroke-dasharray="4 3"/>
+    </svg>
+    <div class="logo-inner">J</div>
+    <div class="status-dot"></div>
+  </div>
+  <div class="header-title">
+    <h1>J.A.R.V.I.S.</h1>
+    <p>UNIVERSITY ASSISTANT · 태오 · 1-J1반</p>
+  </div>
+  <div id="live-time" class="header-time">
+    <div id="clock">--:--:--</div>
+    <div class="date" id="date-display">---</div>
+  </div>
+  <div class="panel-toggles">
+    <button class="panel-toggle active" id="toggle-tasks" onclick="togglePanel('tasks')">TASKS</button>
+    <button class="panel-toggle" id="toggle-schedule" onclick="togglePanel('schedule')">SCHEDULE</button>
+  </div>
+</header>
+
+<main>
+  <div id="side-panel">
+    <div class="panel-tabs">
+      <button class="tab-btn active" id="tab-tasks" onclick="switchTab('tasks')">TASKS</button>
+      <button class="tab-btn" id="tab-schedule" onclick="switchTab('schedule')">SCHEDULE</button>
+    </div>
+    <div class="panel-content" id="panel-tasks-content"></div>
+    <div class="panel-content" id="panel-schedule-content" style="display:none;"></div>
+  </div>
+
+  <div id="chat-area">
+    <div id="messages"></div>
+    <div id="suggestions">
+      <button class="suggestion" onclick="quickSend('오늘 수업 알려줘')">오늘 수업 알려줘</button>
+      <button class="suggestion" onclick="quickSend('이번주 과제 뭐야?')">이번주 과제 뭐야?</button>
+      <button class="suggestion" onclick="quickSend('HTML5 div 태그 설명해줘')">HTML5 div 설명해줘</button>
+      <button class="suggestion" onclick="quickSend('일본어 て형 알려줘')">일본어 て형 알려줘</button>
+    </div>
+    <div id="input-area">
+      <div class="input-wrap">
+        <textarea id="msg-input" rows="1" placeholder="질문하거나 과제를 추가해보세요..."></textarea>
+        <button id="send-btn" onclick="sendMessage()">↑</button>
+      </div>
+      <div class="input-hint">ENTER TO SEND · SHIFT+ENTER FOR NEWLINE</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SYSTEM_PROMPT = `당신은 대학생 태오의 AI 자비스입니다. 영어 이름은 J.A.R.V.I.S. (Just A Rather Very Intelligent Student-assistant).
+
+당신은 세 가지 역할을 합니다:
+1. 수업/과제 관리자: 과제 추가, 마감일 추적, 우선순위 정리
+2. 일정 도우미: 오늘/이번 주 일정 관리, 시간 조언
+3. 공부 파트너: 수업 내용 Q&A, 개념 설명, 일본어 도움
+
+태오의 실제 시간표 (교시당 50분, 교시 사이 10분 휴식):
+- 월: 컴퓨터그래픽(11:00~12:50), 기초일본어회화(14:00~14:50), 일본어특강(16:00~17:50)
+- 화: 컴퓨터개론(09:00~11:50), 대인관계능력(12:00~12:50), 일본어특강(16:00~17:50)
+- 수: 컴퓨터사고와SW코딩(13:00~15:50), 일본어특강(16:00~17:50)
+- 목: HTML5(13:00~15:50), 일본어특강(16:00~17:50)
+- 금: 프레젠테이션기술(13:00~15:50), 일본어특강(16:00~17:50)
+
+말투는 간결하고 명료하며, 필요할 때 따뜻하게. 항상 한국어로 대답하세요.
+
+과제를 추가해달라고 하면 응답 마지막에 반드시 다음 형식의 JSON 블록을 포함하세요:
+\`\`\`action
+{"type": "add_task", "title": "과제명", "subject": "과목", "due": "날짜", "priority": "high|medium|low"}
+\`\`\`
+과제 완료 처리 요청 시:
+\`\`\`action
+{"type": "complete_task", "id": 숫자}
+\`\`\`
+일반 대화나 Q&A에는 action 블록을 포함하지 마세요.`;
+
+let tasks = [
+  { id: 1, title: "컴퓨터그래픽 과제", subject: "컴퓨터그래픽", due: "미정", priority: "medium", done: false },
+  { id: 2, title: "HTML5 실습 정리", subject: "HTML5", due: "미정", priority: "medium", done: false },
+  { id: 3, title: "일본어 특강 복습", subject: "일본어 특강", due: "매주", priority: "low", done: false },
+];
+
+const schedule = [
+  { day: "월", en: "MONDAY", items: [
+    { title: "컴퓨터그래픽", time: "11:00 ~ 12:50" },
+    { title: "기초일본어회화", time: "14:00 ~ 14:50" },
+    { title: "일본어 특강", time: "16:00 ~ 17:50" },
+  ]},
+  { day: "화", en: "TUESDAY", items: [
+    { title: "컴퓨터개론", time: "09:00 ~ 11:50" },
+    { title: "대인관계능력", time: "12:00 ~ 12:50" },
+    { title: "일본어 특강", time: "16:00 ~ 17:50" },
+  ]},
+  { day: "수", en: "WEDNESDAY", items: [
+    { title: "컴퓨터사고와SW코딩", time: "13:00 ~ 15:50" },
+    { title: "일본어 특강", time: "16:00 ~ 17:50" },
+  ]},
+  { day: "목", en: "THURSDAY", items: [
+    { title: "HTML5", time: "13:00 ~ 15:50" },
+    { title: "일본어 특강", time: "16:00 ~ 17:50" },
+  ]},
+  { day: "금", en: "FRIDAY", items: [
+    { title: "프레젠테이션기술", time: "13:00 ~ 15:50" },
+    { title: "일본어 특강", time: "16:00 ~ 17:50" },
+  ]},
+];
+
+let messages = [];
+let nextTaskId = 4;
+let activeTab = 'tasks';
+let panelVisible = true;
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  renderTasks();
+  renderSchedule();
+  addMessage('assistant', '안녕하세요, 태오.\n저는 J.A.R.V.I.S.입니다.\n\n수업 관리, 일정, 공부 질문 — 무엇이든 말씀하세요.');
+});
+
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  document.getElementById('date-display').textContent =
+    `${now.getMonth()+1}/${now.getDate()} (${days[now.getDay()]})`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── PANEL ──
+function togglePanel(type) {
+  if (activeTab !== type) {
+    switchTab(type);
+    if (!panelVisible) {
+      panelVisible = true;
+      document.getElementById('side-panel').classList.remove('hidden');
+    }
+    document.getElementById('toggle-' + type).classList.add('active');
+    document.getElementById('toggle-' + (type === 'tasks' ? 'schedule' : 'tasks')).classList.remove('active');
+  } else {
+    panelVisible = !panelVisible;
+    document.getElementById('side-panel').classList.toggle('hidden', !panelVisible);
+    document.getElementById('toggle-' + type).classList.toggle('active', panelVisible);
+  }
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('panel-tasks-content').style.display = tab === 'tasks' ? '' : 'none';
+  document.getElementById('panel-schedule-content').style.display = tab === 'schedule' ? '' : 'none';
+  document.getElementById('tab-tasks').classList.toggle('active', tab === 'tasks');
+  document.getElementById('tab-schedule').classList.toggle('active', tab === 'schedule');
+}
+
+// ── RENDER ──
+function renderTasks() {
+  const el = document.getElementById('panel-tasks-content');
+  const pending = tasks.filter(t => !t.done);
+  const done = tasks.filter(t => t.done);
+  const labels = { high: '긴급', medium: '보통', low: '여유' };
+  let html = '';
+
+  if (pending.length === 0) html += '<div class="empty-state">모든 과제 완료 ✓</div>';
+  pending.forEach(t => {
+    html += `<div class="task-card" onclick="completeTask(${t.id})">
+      <div class="task-header">
+        <div class="task-title">${t.title}</div>
+        <div class="priority-badge priority-${t.priority}">${labels[t.priority]}</div>
+      </div>
+      <div class="task-meta"><span>${t.subject}</span><span>~ ${t.due}</span></div>
+    </div>`;
+  });
+  if (done.length > 0) {
+    html += '<div class="section-label">COMPLETED</div>';
+    done.forEach(t => {
+      html += `<div class="task-card done">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta"><span>${t.subject}</span></div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+function renderSchedule() {
+  const el = document.getElementById('panel-schedule-content');
+  let html = '';
+  schedule.forEach(d => {
+    html += `<div class="day-divider">${d.day} · ${d.en}</div>`;
+    d.items.forEach(s => {
+      html += `<div class="schedule-card">
+        <div class="schedule-title">${s.title}</div>
+        <div class="schedule-meta"><span>${s.time}</span></div>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+// ── MESSAGES ──
+function addMessage(role, content) {
+  messages.push({ role, content });
+  const el = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+  if (role === 'assistant') {
+    row.innerHTML = `<div class="msg-avatar">J</div><div class="msg-bubble assistant">${content}</div>`;
+  } else {
+    row.innerHTML = `<div class="msg-bubble user">${content}</div>`;
+  }
+  el.appendChild(row);
+  el.scrollTop = el.scrollHeight;
+}
+
+function addTyping() {
+  const el = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  row.id = 'typing-indicator';
+  row.innerHTML = `<div class="msg-avatar">J</div><div class="msg-bubble assistant"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  el.appendChild(row);
+  el.scrollTop = el.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+// ── SEND ──
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage('user', text);
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+  addTyping();
+
+  try {
+    // API 키 없이 /api/chat 으로 요청 — 서버에서 키 처리
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: messages.map(m => ({ role: m.role, content: m.content }))
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '오류가 발생했습니다.';
+
+    const actionMatch = raw.match(/```action\n([\s\S]*?)\n```/);
+    if (actionMatch) {
+      try {
+        const action = JSON.parse(actionMatch[1]);
+        if (action.type === 'add_task') {
+          tasks.push({ id: nextTaskId++, title: action.title, subject: action.subject, due: action.due, priority: action.priority || 'medium', done: false });
+          renderTasks();
+          if (activeTab !== 'tasks') switchTab('tasks');
+          if (!panelVisible) { panelVisible = true; document.getElementById('side-panel').classList.remove('hidden'); }
+        } else if (action.type === 'complete_task') {
+          tasks = tasks.map(t => t.id === action.id ? { ...t, done: true } : t);
+          renderTasks();
+        }
+      } catch(e) {}
+    }
+
+    const clean = raw.replace(/```action\n[\s\S]*?\n```/g, '').trim();
+    removeTyping();
+    addMessage('assistant', clean);
+  } catch(e) {
+    removeTyping();
+    addMessage('assistant', '연결 오류가 발생했습니다.');
+  }
+
+  document.getElementById('send-btn').disabled = false;
+}
+
+function completeTask(id) {
+  tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+  renderTasks();
+}
+
+function quickSend(text) {
+  document.getElementById('msg-input').value = text;
+  sendMessage();
+}
+
+document.getElementById('msg-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  setTimeout(() => {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+  }, 0);
+});
+</script>
+</body>
+</html>
