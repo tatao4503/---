@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
       };
     });
 
-    const response = await fetch(
+    const geminiRes = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + process.env.GEMINI_API_KEY,
       {
         method: 'POST',
@@ -24,16 +24,20 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: system }] },
           contents: contents,
-          generationConfig: { maxOutputTokens: 1000 }
+          generationConfig: { maxOutputTokens: 500, temperature: 0.7 }
         })
       }
     );
 
-    const raw = await response.text();
-    const data = JSON.parse(raw);
-    const text = data.candidates[0].content.parts[0].text;
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      return res.status(500).json({ error: 'Gemini API error: ' + geminiRes.status, detail: errText.slice(0, 500) });
+    }
 
+    const data = await geminiRes.json();
+    const text = data.candidates[0].content.parts[0].text;
     return res.status(200).json({ content: [{ type: 'text', text: text }] });
+
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
