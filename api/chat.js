@@ -29,8 +29,9 @@ module.exports = async function handler(req, res) {
       }
     );
 
-    const data = await response.json();
-    const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] ? data.candidates[0].content.parts[0].text : '오류가 발생했습니다.';
+    const raw = await response.text();
+    const data = JSON.parse(raw);
+    const text = data.candidates[0].content.parts[0].text;
 
     return res.status(200).json({ content: [{ type: 'text', text: text }] });
   } catch (error) {
