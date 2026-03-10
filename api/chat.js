@@ -28,12 +28,12 @@ module.exports = async function handler(req, res) {
     );
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '오류가 발생했습니다.';
+    
+    // 디버깅: Gemini 응답 전체를 그대로 반환
+    return res.status(200).json(data);
 
-    return res.status(200).json({
-      content: [{ type: 'text', text }]
-    });
   } catch (error) {
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    return res.status(500).json({ error: error.message });
   }
 }
+
