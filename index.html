@@ -532,9 +532,7 @@ async function sendMessage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         system: SYSTEM_PROMPT,
-        messages: messages.map(m => ({ role: m.role, content: m.content }))
-      })
-    });
+        messages: messages.slice(-10).map(m => ({ role: m.role, content: m.content }))
 
     const data = await res.json();
     const raw = data.content?.[0]?.text || '오류가 발생했습니다.';
